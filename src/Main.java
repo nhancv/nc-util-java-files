@@ -119,6 +119,13 @@ public class Main {
         return list;
     }
 
+    /**
+     * Find final result belong inputList and parse type
+     *
+     * @param inputList
+     * @param parseType
+     * @return
+     */
     public static String findFinalResult(List<String> inputList, PARSE parseType) {
         String finalResult = null;
         //Verify

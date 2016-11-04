@@ -21,7 +21,7 @@ public class Main {
 
             List<String> dueDates = new ArrayList<>();
             List<String> amounts = new ArrayList<>();
-            List<String> invoidNos = new ArrayList<>();
+            List<String> invoiceNos = new ArrayList<>();
 
             @Override
             public void iRead(final BufferedReader reader) {
@@ -68,13 +68,13 @@ public class Main {
                     parseType = PARSE.INVOICE_NO;
                     index = containsString(parse, parseType.getKeyWord());
                     if (index > -1) {
-                        invoidNos.addAll(findInList(strOriginals, i, parseType));
+                        invoiceNos.addAll(findInList(strOriginals, i, parseType));
                     }
                 }
 
                 System.out.println(findFinalResult(dueDates, PARSE.DUE_DATE));
                 System.out.println(findFinalResult(amounts, PARSE.AMOUNT));
-                System.out.println(findFinalResult(invoidNos, PARSE.INVOICE_NO));
+                System.out.println(findFinalResult(invoiceNos, PARSE.INVOICE_NO));
 
                 strParses.forEach(s -> {
                     try {

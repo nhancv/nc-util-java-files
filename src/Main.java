@@ -1,11 +1,6 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,80 +8,94 @@ public class Main {
 
     public static void main(String[] args) {
 
-        FileUtils fileUtils = new FileUtils("input.txt", "output.txt");
-        fileUtils.handle(new FileUtils.IFile() {
-            List<String> inputArray = new ArrayList<>();
-            List<String> strParses = new ArrayList<>();
-            List<String> strOriginals = new ArrayList<>();
-
-            List<String> dueDates = new ArrayList<>();
-            List<String> amounts = new ArrayList<>();
-            List<String> invoiceNos = new ArrayList<>();
-
-            @Override
-            public void iRead(final BufferedReader reader) {
-                reader.lines().forEach(s -> {
-                    inputArray.add(s);
-                });
+        List<String> inputList = new ArrayList<>();
+        inputList.add("22 AUG 2016");
+        inputList.add("22 Nov 2016");
+        Date tmp;
+        Date minDate = new Date();
+        for (String s : inputList) {
+            tmp = isDateValid(s);
+            if (tmp != null && minDate.compareTo(tmp) > 0) {
+                minDate = tmp;
             }
+        }
+        String finalResult = new SimpleDateFormat("dd MMM yyyy").format(minDate);
+        System.out.println(finalResult);
 
-            @Override
-            public void iWrite(final BufferedWriter writer) {
-                String all = "";
-                List<String> l1 = new ArrayList<>();
-                inputArray.forEach((x) -> {
-                    l1.add(x.replaceAll("[+^:,]", "").toUpperCase().trim());
-                });
-
-                //Concat to one str
-                for (int i = 0; i < l1.size(); i++) {
-                    all += l1.get(i) + "\n";
-                }
-                //Replace more than 2 newline to one line
-                all = all.replaceAll("[\n]{2,}", "\n\n");
-                //Build to array
-                String[] subStrArr = all.split("[\n]");
-                for (int i = 0; i < subStrArr.length; i++) {
-                    String parse = verifyString(subStrArr[i]);
-                    strParses.add(parse);
-                    strOriginals.add(subStrArr[i]);
-                }
-
-                //Parse
-                for (int i = 0; i < strParses.size(); i++) {
-                    String parse = strParses.get(i);
-                    PARSE parseType = PARSE.DUE_DATE;
-                    int index = containsString(parse, parseType.getKeyWord());
-                    if (index > -1) {
-                        dueDates.addAll(findInList(strOriginals, i, parseType));
-                    }
-                    parseType = PARSE.AMOUNT;
-                    index = containsString(parse, parseType.getKeyWord());
-                    if (index > -1) {
-                        amounts.addAll(findInList(strOriginals, i, parseType));
-                    }
-                    parseType = PARSE.INVOICE_NO;
-                    index = containsString(parse, parseType.getKeyWord());
-                    if (index > -1) {
-                        invoiceNos.addAll(findInList(strOriginals, i, parseType));
-                    }
-                }
-
-                System.out.println(findFinalResult(dueDates, PARSE.DUE_DATE));
-                System.out.println(findFinalResult(amounts, PARSE.AMOUNT));
-                System.out.println(findFinalResult(invoiceNos, PARSE.INVOICE_NO));
-
-                strParses.forEach(s -> {
-                    try {
-                        writer.write(s + "\n");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
-
-
-            }
-        });
+//        FileUtils fileUtils = new FileUtils("input.txt", "output.txt");
+//        fileUtils.handle(new FileUtils.IFile() {
+//            List<String> inputArray = new ArrayList<>();
+//            List<String> strParses = new ArrayList<>();
+//            List<String> strOriginals = new ArrayList<>();
+//
+//            List<String> dueDates = new ArrayList<>();
+//            List<String> amounts = new ArrayList<>();
+//            List<String> invoiceNos = new ArrayList<>();
+//
+//            @Override
+//            public void iRead(final BufferedReader reader) {
+//                reader.lines().forEach(s -> {
+//                    inputArray.add(s);
+//                });
+//            }
+//
+//            @Override
+//            public void iWrite(final BufferedWriter writer) {
+//                String all = "";
+//                List<String> l1 = new ArrayList<>();
+//                inputArray.forEach((x) -> {
+//                    l1.add(x.replaceAll("[+^:,]", "").toUpperCase().trim());
+//                });
+//
+//                //Concat to one str
+//                for (int i = 0; i < l1.size(); i++) {
+//                    all += l1.get(i) + "\n";
+//                }
+//                //Replace more than 2 newline to one line
+//                all = all.replaceAll("[\n]{2,}", "\n\n");
+//                //Build to array
+//                String[] subStrArr = all.split("[\n]");
+//                for (int i = 0; i < subStrArr.length; i++) {
+//                    String parse = verifyString(subStrArr[i]);
+//                    strParses.add(parse);
+//                    strOriginals.add(subStrArr[i]);
+//                }
+//
+//                //Parse
+//                for (int i = 0; i < strParses.size(); i++) {
+//                    String parse = strParses.get(i);
+//                    PARSE parseType = PARSE.DUE_DATE;
+//                    int index = containsString(parse, parseType.getKeyWord());
+//                    if (index > -1) {
+//                        dueDates.addAll(findInList(strOriginals, i, parseType));
+//                    }
+//                    parseType = PARSE.AMOUNT;
+//                    index = containsString(parse, parseType.getKeyWord());
+//                    if (index > -1) {
+//                        amounts.addAll(findInList(strOriginals, i, parseType));
+//                    }
+//                    parseType = PARSE.INVOICE_NO;
+//                    index = containsString(parse, parseType.getKeyWord());
+//                    if (index > -1) {
+//                        invoiceNos.addAll(findInList(strOriginals, i, parseType));
+//                    }
+//                }
+//
+//                System.out.println(findFinalResult(dueDates, PARSE.DUE_DATE));
+//                System.out.println(findFinalResult(amounts, PARSE.AMOUNT));
+//                System.out.println(findFinalResult(invoiceNos, PARSE.INVOICE_NO));
+//
+//                strParses.forEach(s -> {
+//                    try {
+//                        writer.write(s + "\n");
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                });
+//
+//
+//            }
+//        });
     }
 
 
@@ -164,15 +173,15 @@ public class Main {
     public static Date isDateValid(String inputDate) {
         List<SimpleDateFormat> dateFormats = new ArrayList<SimpleDateFormat>() {
             {
-                add(new SimpleDateFormat("M/dd/yyyy"));
-                add(new SimpleDateFormat("dd.M.yyyy"));
-                add(new SimpleDateFormat("M/dd/yyyy hh:mm:ss a"));
-                add(new SimpleDateFormat("dd.M.yyyy hh:mm:ss a"));
-                add(new SimpleDateFormat("dd MMMMM yyyy"));
-                add(new SimpleDateFormat("dd MMM yyyy"));
-                add(new SimpleDateFormat("dd M yyyy"));
-                add(new SimpleDateFormat("dd.MMM.yyyy"));
-                add(new SimpleDateFormat("dd-MMM-yyyy"));
+                add(new SimpleDateFormat("M/dd/yyyy", Locale.US));
+                add(new SimpleDateFormat("dd.M.yyyy", Locale.US));
+                add(new SimpleDateFormat("M/dd/yyyy hh:mm:ss a", Locale.US));
+                add(new SimpleDateFormat("dd.M.yyyy hh:mm:ss a", Locale.US));
+                add(new SimpleDateFormat("dd MMMMM yyyy", Locale.US));
+                add(new SimpleDateFormat("dd MMM yyyy", Locale.US));
+                add(new SimpleDateFormat("dd M yyyy", Locale.US));
+                add(new SimpleDateFormat("dd.MMM.yyyy", Locale.US));
+                add(new SimpleDateFormat("dd-MMM-yyyy", Locale.US));
             }
         };
 
@@ -183,6 +192,7 @@ public class Main {
         for (SimpleDateFormat format : dateFormats) {
             try {
                 format.setLenient(false);
+                format.setTimeZone(TimeZone.getTimeZone("UTC"));
                 date = format.parse(inputDate);
             } catch (ParseException ignored) {
             }

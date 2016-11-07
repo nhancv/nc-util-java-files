@@ -19,7 +19,6 @@ public class BillParser {
     private List<String> amounts = new ArrayList<>();
     private List<String> invoiceNos = new ArrayList<>();
 
-
     public BillParser() {
     }
 
@@ -73,6 +72,9 @@ public class BillParser {
                 add(new SimpleDateFormat("ddMyyyy", Locale.US));
                 add(new SimpleDateFormat("ddMyy", Locale.US));
                 add(new SimpleDateFormat("dd.MMM.yyyy", Locale.US));
+                add(new SimpleDateFormat("dd/MM/yy", Locale.US));
+                add(new SimpleDateFormat("dd/MM/yyyy", Locale.US));
+                add(new SimpleDateFormat("MM/dd/yyyy", Locale.US));
                 add(new SimpleDateFormat("dd-MMM-yyyy", Locale.US));
             }
         };

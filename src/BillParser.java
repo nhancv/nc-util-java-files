@@ -24,12 +24,35 @@ public class BillParser {
     }
 
     /**
+     * Check date is valid with specific format
+     *
+     * @param inputDate
+     * @param formatDate
+     * @return
+     */
+    private boolean isValidDateWithFormat(String inputDate, String formatDate) {
+        if (inputDate == null) {
+            return false;
+        }
+        try {
+            SimpleDateFormat format = new SimpleDateFormat(formatDate, Locale.US);
+            format.setLenient(false);
+            format.setTimeZone(TimeZone.getTimeZone("UTC"));
+            format.parse(inputDate);
+        } catch (ParseException e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Check date is valid
      *
      * @param inputDate
      * @return
      */
-    public static Date isDateValid(String inputDate) {
+    private Date isDateValid(String inputDate) {
         List<SimpleDateFormat> dateFormats = new ArrayList<SimpleDateFormat>() {
             {
                 add(new SimpleDateFormat("M/dd/yyyy", Locale.US));
@@ -37,11 +60,18 @@ public class BillParser {
                 add(new SimpleDateFormat("M/dd/yyyy hh:mm:ss a", Locale.US));
                 add(new SimpleDateFormat("dd.M.yyyy hh:mm:ss a", Locale.US));
                 add(new SimpleDateFormat("dd MMMMM yyyy", Locale.US));
-                add(new SimpleDateFormat("dd MMM yyyy", Locale.US));
-                add(new SimpleDateFormat("dd M yyyy", Locale.US));
                 add(new SimpleDateFormat("ddMMMMMyyyy", Locale.US));
+                add(new SimpleDateFormat("ddMMMMMyy", Locale.US));
+                add(new SimpleDateFormat("dd MMM yyyy", Locale.US));
                 add(new SimpleDateFormat("ddMMMyyyy", Locale.US));
+                add(new SimpleDateFormat("ddMMMyy", Locale.US));
+                add(new SimpleDateFormat("dd MMMyyyy", Locale.US));
+                add(new SimpleDateFormat("ddMMM yyyy", Locale.US));
+                add(new SimpleDateFormat("dd MMMyy", Locale.US));
+                add(new SimpleDateFormat("ddMMM yy", Locale.US));
+                add(new SimpleDateFormat("dd M yyyy", Locale.US));
                 add(new SimpleDateFormat("ddMyyyy", Locale.US));
+                add(new SimpleDateFormat("ddMyy", Locale.US));
                 add(new SimpleDateFormat("dd.MMM.yyyy", Locale.US));
                 add(new SimpleDateFormat("dd-MMM-yyyy", Locale.US));
             }
@@ -91,7 +121,7 @@ public class BillParser {
         String all = "";
         List<String> l1 = new ArrayList<>();
         for (String x : inputArray) {
-            l1.add(x.replaceAll("[+^,]", "").replaceAll("[:]", "\n").toUpperCase().trim());
+            l1.add(x.replaceAll("[+^,()]", "").replaceAll("[:]", "\n").toUpperCase().trim());
         }
 
         //Concat to one str
@@ -125,6 +155,18 @@ public class BillParser {
             index = containsString(parse, parseType.getKeyWord());
             if (index > -1) {
                 invoiceNos.addAll(findInList(strOriginals, i, parseType));
+            }
+            if (invoiceNos.size() == 0) {
+                index = containsString(parse, "ACCOUNT NUMBER");
+                if (index > -1) {
+                    invoiceNos.addAll(findInList(strOriginals, i, parseType));
+                }
+            }
+            if (invoiceNos.size() == 0) {
+                index = containsString(parse, "TAX INVOICE");
+                if (index > -1) {
+                    invoiceNos.addAll(findInList(strOriginals, i, parseType));
+                }
             }
         }
 
@@ -166,7 +208,7 @@ public class BillParser {
         list.addAll(top);
         list.addAll(current);
         list.addAll(bottom);
-        if (bottom.size() == 0) {
+        if (list.size() == 0) {
             list.addAll(addMatchedToList(inputList, index + 2, parseType));
         }
         return list;
@@ -185,20 +227,27 @@ public class BillParser {
         if (index >= 0 && index < inputList.size()) {
             String tmp = inputList.get(index);
             if (parseType == PARSE.AMOUNT) {
-                String[] res = tmp.split("\\s{2,}+");
+                String[] res = tmp.trim().split("\\s{2,}+");
                 for (int i = 0; i < res.length; i++) {
                     if (res[i].contains(parseType.getRegx())) {
                         list.add(res[i].trim());
                     }
                 }
-            } else {
-                String[] res = tmp.split("\\s{2,}+");
+            } else if (parseType == PARSE.DUE_DATE) {
+                String[] res = tmp.trim().split("\\s{2,}+");
                 for (int i = 0; i < res.length; i++) {
-                    System.out.println("root " + res[i] + " tmp = " + tmp);
-                    Matcher matcher = match(res[i], parseType.getRegx());
-                    if (matcher != null) {
-                        System.out.println("match " + res[i]);
+                    if (isDateValid(res[i].trim()) != null) {
                         list.add(res[i].trim());
+                    }
+                }
+            } else {
+                String[] res = tmp.trim().split("\\s{2,}+");
+                for (int i = 0; i < res.length; i++) {
+                    if (!isValidDateWithFormat(res[i], "dd/MM/yyyy") && !res[i].contains("PAGE ")) {
+                        Matcher matcher = match(res[i], parseType.getRegx());
+                        if (matcher != null) {
+                            list.add(res[i].trim());
+                        }
                     }
                 }
             }
@@ -257,7 +306,7 @@ public class BillParser {
             case INVOICE_NO:
                 String max = null;
                 if (inputList.size() > 0) {
-                    max = inputList.get(inputList.size() - 1);
+                    max = inputList.get(inputList.size() - 1).replace("( ", "").replace(" )", "").replace("LIP ", "");
                 }
                 finalResult = max;
                 break;
@@ -273,7 +322,7 @@ public class BillParser {
                     }
                 }
                 if (hasValue) {
-                    finalResult = new SimpleDateFormat("dd MMM yyyy", Locale.US).format(minDate);
+                    finalResult = new SimpleDateFormat("dd MMM yyyy", Locale.US).format(minDate).replace("00", "");
                 }
                 break;
         }
@@ -282,15 +331,15 @@ public class BillParser {
 
     private enum PARSE {
         DUE_DATE(
-                "INVOICE DATE|DEBIT ON|DUE DATE|TOTAL DUE|PAYMENT DUE|PAYMENT DUE BY",
+                "INVOICE DATE|DEBIT ON|DUE DATE|TOTAL DUE|PAYMENT DUE|PAYMENT DUE BY|DATE TO BE DEBITED|DIRECT DEBIT ON|DIRECT DEBITON|CHARGES DUE|CHARGES OLE|DATE DUE",
                 "(\\d+)(\\/|-|\\s|\\.)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|\\d+|)(\\/|-|\\s|\\.)(\\d+)"),
 
         AMOUNT(
-                "AMOUNT|DEBITED|TOTAL|PAYMENT DUE|TOTAL DUE|AMOUNT DUE",
+                "AMOUNT|DEBITED|TOTAL|PAYMENT DUE|TOTAL DUE|AMOUNT DUE|TOTAL PAYABLE",
                 "$"),
 
         INVOICE_NO(
-                "INVOICE NUMBER|INVOICE NO|BILL NUMBER|BILL NO",
+                "INVOICE NUMBER|INVOICE NO|BILL NUMBER|BILL NO|BILL ID|PAYMENT NUMBER",
                 "(\\w*\\d+)");
 
 

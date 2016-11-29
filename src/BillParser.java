@@ -1,3 +1,5 @@
+import javafx.util.Pair;
+
 import java.io.*;
 import java.nio.charset.Charset;
 import java.text.ParseException;
@@ -18,8 +20,13 @@ public class BillParser {
     private List<String> dueDates = new ArrayList<>();
     private List<String> amounts = new ArrayList<>();
     private List<String> invoiceNos = new ArrayList<>();
+    private List<String> companies = new ArrayList<>();
 
     public BillParser() {
+    }
+
+    public void setCompany() {
+        PARSE.COMPANY.setKeyWord("WATER|OPTUS|SYNERGY|IINET|VIVID|DODO|VODAFONE|ENGIN|ALINTA|TELSTRA|WESTPAC|RAC|OVERNIGHT|TEST-QA|PRIMUS");
     }
 
     /**
@@ -170,12 +177,19 @@ public class BillParser {
                     invoiceNos.addAll(findInList(strOriginals, i, parseType));
                 }
             }
+
+            parseType = PARSE.COMPANY;
+            index = containsString(parse, parseType.getKeyWord());
+            if (index > -1) {
+                companies.add(parse);
+            }
         }
 
         return new Info(
                 findFinalResult(dueDates, PARSE.DUE_DATE),
                 findFinalResult(amounts, PARSE.AMOUNT),
-                findFinalResult(invoiceNos, PARSE.INVOICE_NO)
+                findFinalResult(invoiceNos, PARSE.INVOICE_NO),
+                findFinalResult(companies, PARSE.COMPANY)
         );
 
     }
@@ -242,7 +256,7 @@ public class BillParser {
                         list.add(res[i].trim());
                     }
                 }
-            } else {
+            } else if (parseType == PARSE.INVOICE_NO) {
                 String[] res = tmp.trim().split("\\s{2,}+");
                 for (int i = 0; i < res.length; i++) {
                     if (!isValidDateWithFormat(res[i], "dd/MM/yyyy") && !res[i].contains("PAGE ")) {
@@ -305,8 +319,18 @@ public class BillParser {
         //Verify
         switch (parseType) {
             case AMOUNT:
-            case INVOICE_NO:
                 String max = null;
+                if (inputList.size() > 0) {
+                    String[] splits = inputList.get(inputList.size() - 1).replace("( ", "").replace(" )", "").replace("LIP ", "").split(" ");
+                    if (splits.length > 0) {
+                        max = splits[0].replace("$", "");
+                        if (max.isEmpty()) max = null;
+                    }
+                }
+                finalResult = max;
+                break;
+            case INVOICE_NO:
+                max = null;
                 if (inputList.size() > 0) {
                     max = inputList.get(inputList.size() - 1).replace("( ", "").replace(" )", "").replace("LIP ", "");
                 }
@@ -327,6 +351,44 @@ public class BillParser {
                     finalResult = new SimpleDateFormat("dd MMM yyyy", Locale.US).format(minDate).replace("00", "");
                 }
                 break;
+            case COMPANY:
+                max = null;
+                if (inputList.size() > 0) {
+                    String[] token = parseType.getKeyWord().split("[|]");
+                    Map<String, Integer> tokenMap = new LinkedHashMap<>();
+
+                    for (String s : inputList) {
+                        String[] subStr = s.split(" ");
+                        for (String s1 : subStr) {
+                            int index = containsString(s1, parseType.getKeyWord());
+                            if (index > -1) {
+                                for (String s2 : token) {
+                                    if (s1.substring(index).startsWith(s2)) {
+                                        if (tokenMap.containsKey(s2)) {
+                                            tokenMap.put(s2, tokenMap.get(s2) + 1);
+                                        } else {
+                                            tokenMap.put(s2, 1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (tokenMap.size() > 0) {
+                        Pair<String, Integer> maxItem = null;
+                        for (Map.Entry<String, Integer> stringIntegerEntry : tokenMap.entrySet()) {
+                            if (maxItem == null) {
+                                maxItem = new Pair<>(stringIntegerEntry.getKey(), stringIntegerEntry.getValue());
+                            } else if (maxItem.getValue() < stringIntegerEntry.getValue()) {
+                                maxItem = new Pair<>(stringIntegerEntry.getKey(), stringIntegerEntry.getValue());
+                            }
+                        }
+                        if (maxItem != null)
+                            max = maxItem.getKey();
+                    }
+                }
+                finalResult = max;
+                break;
         }
         return finalResult;
     }
@@ -341,9 +403,10 @@ public class BillParser {
                 "$"),
 
         INVOICE_NO(
-                "INVOICE NUMBER|INVOICE NO|BILL NUMBER|BILL NO|BILL ID|PAYMENT NUMBER",
-                "(\\w*\\d+)");
+                "INVOICE NUMBER|INVOICE NO|BILL NUMBER|BILL NO|BILL ID|PAYMENT NUMBER|CUSTOMER NUMBER|REFERENCE",
+                "(\\w*\\d+)"),
 
+        COMPANY("", "[A-Za-z]");
 
         private String keyWord;
         private String regx;
@@ -357,6 +420,10 @@ public class BillParser {
             return keyWord;
         }
 
+        public void setKeyWord(String keyWord) {
+            this.keyWord = keyWord;
+        }
+
         public String getRegx() {
             return regx;
         }
@@ -367,11 +434,17 @@ public class BillParser {
         private String dueDate;
         private String amount;
         private String invoiceNo;
+        private String companyName;
 
-        public Info(String dueDate, String amount, String invoiceNo) {
+        public Info(String dueDate, String amount, String invoiceNo, String companyName) {
             this.dueDate = dueDate;
             this.amount = amount;
             this.invoiceNo = invoiceNo;
+            this.companyName = companyName;
+        }
+
+        public String getCompanyName() {
+            return companyName;
         }
 
         public String getDueDate() {
@@ -396,6 +469,7 @@ public class BillParser {
                     "dueDate='" + dueDate + '\'' +
                     ", amount='" + amount + '\'' +
                     ", invoiceNo='" + invoiceNo + '\'' +
+                    ", companyName='" + companyName + '\'' +
                     '}';
         }
     }

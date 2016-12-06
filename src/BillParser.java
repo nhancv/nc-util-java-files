@@ -160,22 +160,10 @@ public class BillParser {
             if (index > -1) {
                 amounts.addAll(findInList(strOriginals, i, parseType));
             }
-            parseType = PARSE.INVOICE_NO;
+            parseType = PARSE.REF_NO;
             index = containsString(parse, parseType.getKeyWord());
             if (index > -1) {
                 invoiceNos.addAll(findInList(strOriginals, i, parseType));
-            }
-            if (invoiceNos.size() == 0) {
-                index = containsString(parse, "ACCOUNT NUMBER");
-                if (index > -1) {
-                    invoiceNos.addAll(findInList(strOriginals, i, parseType));
-                }
-            }
-            if (invoiceNos.size() == 0) {
-                index = containsString(parse, "TAX INVOICE");
-                if (index > -1) {
-                    invoiceNos.addAll(findInList(strOriginals, i, parseType));
-                }
             }
 
             parseType = PARSE.COMPANY;
@@ -188,7 +176,7 @@ public class BillParser {
         return new Info(
                 findFinalResult(dueDates, PARSE.DUE_DATE),
                 findFinalResult(amounts, PARSE.AMOUNT),
-                findFinalResult(invoiceNos, PARSE.INVOICE_NO),
+                findFinalResult(invoiceNos, PARSE.REF_NO),
                 findFinalResult(companies, PARSE.COMPANY)
         );
 
@@ -256,7 +244,7 @@ public class BillParser {
                         list.add(res[i].trim());
                     }
                 }
-            } else if (parseType == PARSE.INVOICE_NO) {
+            } else if (parseType == PARSE.REF_NO) {
                 String[] res = tmp.trim().split("\\s{2,}+");
                 for (int i = 0; i < res.length; i++) {
                     if (!isValidDateWithFormat(res[i], "dd/MM/yyyy") && !res[i].contains("PAGE ")) {
@@ -323,16 +311,19 @@ public class BillParser {
                 if (inputList.size() > 0) {
                     String[] splits = inputList.get(inputList.size() - 1).replace("( ", "").replace(" )", "").replace("LIP ", "").split(" ");
                     if (splits.length > 0) {
-                        max = splits[0].replace("$", "");
+                        max = splits[0].replace("$", "").replaceAll("\\s", "").replace("CR", "");
                         if (max.isEmpty()) max = null;
                     }
                 }
                 finalResult = max;
                 break;
-            case INVOICE_NO:
+            case REF_NO:
                 max = null;
                 if (inputList.size() > 0) {
                     max = inputList.get(inputList.size() - 1).replace("( ", "").replace(" )", "").replace("LIP ", "");
+                    if (!max.replaceAll("\\s", "").matches(PARSE.REF_NO.getRegx())) {
+                        max = null;
+                    }
                 }
                 finalResult = max;
                 break;
@@ -402,9 +393,9 @@ public class BillParser {
                 "AMOUNT|DEBITED|TOTAL|PAYMENT DUE|TOTAL DUE|AMOUNT DUE|TOTAL PAYABLE",
                 "$"),
 
-        INVOICE_NO(
-                "INVOICE NUMBER|INVOICE NO|BILL NUMBER|BILL NO|BILL ID|PAYMENT NUMBER|CUSTOMER NUMBER|REFERENCE",
-                "(\\w*\\d+)"),
+        REF_NO(
+                "ACCOUNT NUMBER|CUSTOMER NUMBER|REFERENCE|PAYMENT NUMBER",
+                "(\\d+)"),
 
         COMPANY("", "[A-Za-z]");
 
@@ -433,13 +424,13 @@ public class BillParser {
     public static class Info implements Serializable {
         private String dueDate;
         private String amount;
-        private String invoiceNo;
+        private String refNo;
         private String companyName;
 
-        public Info(String dueDate, String amount, String invoiceNo, String companyName) {
+        public Info(String dueDate, String amount, String refNo, String companyName) {
             this.dueDate = dueDate;
             this.amount = amount;
-            this.invoiceNo = invoiceNo;
+            this.refNo = refNo;
             this.companyName = companyName;
         }
 
@@ -455,12 +446,12 @@ public class BillParser {
             return amount;
         }
 
-        public String getInvoiceNo() {
-            return invoiceNo;
+        public String getRefNo() {
+            return refNo;
         }
 
         public boolean isNull() {
-            return (dueDate == null && amount == null && invoiceNo == null);
+            return (dueDate == null && amount == null && refNo == null);
         }
 
         @Override
@@ -468,7 +459,7 @@ public class BillParser {
             return "Info{" +
                     "dueDate='" + dueDate + '\'' +
                     ", amount='" + amount + '\'' +
-                    ", invoiceNo='" + invoiceNo + '\'' +
+                    ", refNo='" + refNo + '\'' +
                     ", companyName='" + companyName + '\'' +
                     '}';
         }

@@ -1,5 +1,0 @@
-'TP. Cần Thơ',
-'TP. Đà Nẵng',
-'TP. Hải Phòng',
-'TP. Hà Nội',
-'TP. HCM',

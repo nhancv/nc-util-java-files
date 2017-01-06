@@ -1,14 +1,10 @@
-import base.Factory;
-import bill_parser.BillParserFactory;
+import base.Module;
 
 public class Main {
 
     public static void main(String[] args) {
-
-        Factory factory = new BillParserFactory();
-        factory.run();
-
+        Module.BILL_PARSER.run();
+        Module.FILE_ANDROID_NAME.run();
     }
-
 
 }

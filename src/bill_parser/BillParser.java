@@ -1,3 +1,5 @@
+package bill_parser;
+
 import javafx.util.Pair;
 
 import java.io.*;

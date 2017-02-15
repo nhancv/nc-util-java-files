@@ -1,19 +1,22 @@
 import bill_parser.BillParserFactory;
 import file_android_name.FileAndroidNameFactory;
 import number_generator.NumberGeneratorFactory;
+import png_to_jpg.PngToJpgFactory;
 
 public class Main {
 
     public static void main(String[] args) {
 //        Module.BILL_PARSER.run();
 //        Module.FILE_ANDROID_NAME.run();
-        Module.NUMBER_GENERATOR.run();
+//        Module.NUMBER_GENERATOR.run();
+        Module.PNG_TO_JPG.run();
     }
 
     enum Module {
         BILL_PARSER,
         FILE_ANDROID_NAME,
-        NUMBER_GENERATOR;
+        NUMBER_GENERATOR,
+        PNG_TO_JPG;
 
         public void run() {
             switch (this) {
@@ -25,6 +28,9 @@ public class Main {
                     break;
                 case NUMBER_GENERATOR:
                     new NumberGeneratorFactory().run();
+                    break;
+                case PNG_TO_JPG:
+                    new PngToJpgFactory().run();
                     break;
             }
         }

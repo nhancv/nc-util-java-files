@@ -1,5 +1,8 @@
 package base;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,33 +20,18 @@ public class FileUtils {
     private String outputFileName;
     private Charset charset;
 
-    public interface IFile {
-        void iRead(final BufferedReader reader);
-
-        void iWrite(final BufferedWriter writer);
-    }
-
     public FileUtils(final String inputFileName, final String outputFileName) {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.charset = Charset.forName("UTF-8");
     }
 
-    public void handle(final IFile fileHandle) {
-        try (BufferedReader reader = Files.newBufferedReader(Paths.get(inputFileName), charset)) {
-            BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputFileName), charset);
-            fileHandle.iRead(reader);
-            fileHandle.iWrite(writer);
-            reader.close();
-            writer.close();
-        } catch (IOException ex) {
-            System.err.format("IOException: %s%n", ex);
-        }
+    public static String getFileExtension(File file) {
+        return getFileExtension(file.getName());
     }
 
-    public static String getFileExtension(File file) {
+    public static String getFileExtension(String fullFileName) {
         try {
-            String fullFileName = file.getName();
             String[] split = fullFileName.split("\\.");
             if (split.length > 1) {
                 return split[split.length - 1];
@@ -61,6 +49,50 @@ public class FileUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void deleteFile(String path) {
+        try {
+            new File(path).delete();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void convertToJpg(String path) {
+        BufferedImage bufferedImage;
+        try {
+            //read image file
+            bufferedImage = ImageIO.read(new File(path));
+            //create a blank, RGB, same width and height, and a white background
+            BufferedImage newBufferedImage = new BufferedImage(bufferedImage.getWidth(),
+                    bufferedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+            newBufferedImage.createGraphics().drawImage(bufferedImage, 0, 0, Color.WHITE, null);
+            // write to jpeg file
+            String jpgName = (path + ".jpg").toLowerCase().replace(".png.jpg", ".jpg");
+            ImageIO.write(newBufferedImage, "jpg", new File(jpgName));
+            System.out.println("Done: " + path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void handle(final IFile fileHandle) {
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(inputFileName), charset)) {
+            BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputFileName), charset);
+            fileHandle.iRead(reader);
+            fileHandle.iWrite(writer);
+            reader.close();
+            writer.close();
+        } catch (IOException ex) {
+            System.err.format("IOException: %s%n", ex);
+        }
+    }
+
+    public interface IFile {
+        void iRead(final BufferedReader reader);
+
+        void iWrite(final BufferedWriter writer);
     }
 
 }

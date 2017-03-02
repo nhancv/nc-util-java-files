@@ -51,6 +51,12 @@ public class FileUtils {
         }
     }
 
+    public static boolean moveFile(String fromPath, String toPath) {
+        File fromF = new File(fromPath);
+        File toF = new File(toPath);
+        return fromF.renameTo(toF);
+    }
+
     public static void deleteFile(String path) {
         try {
             new File(path).delete();
